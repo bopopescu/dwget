@@ -4,9 +4,9 @@ from pydispatch import dispatcher
 from common.Logger import Logger
 from threading import Thread as th
 from dwgetd.threads import *
-from dwgetd.Slave import *
+from dwgetd.Subordinate import *
 from dwgetd.Task import *
-from dwgetd.Slavedriver import *
+from dwgetd.Subordinatedriver import *
 from collections import deque
 from common import consts
 import socket, sys, time
@@ -23,7 +23,7 @@ class Dwgetd(object):
     taskList = []
     taskQueue = deque()
     __thread = None 
-    __driver = Slavedriver()
+    __driver = Subordinatedriver()
     replyMsg = ''
     
     def __init__(self):
@@ -32,12 +32,12 @@ class Dwgetd(object):
         logger = Logger('dwgetd',2001, '127.0.0.1', True)
         logger.addStuff(self.__driver)
     
-        dispatcher.connect(self.newSlave, signal = 'NEW_SLAVE', sender = 'masterMainThread')
-        dispatcher.connect(self.delSlave, signal = 'DEL_SLAVE', sender = 'masterMainThread')
-        dispatcher.connect(self.newDownload, signal = 'NEW_DOWNLOAD', sender = 'masterMainThread')
-        dispatcher.connect(self.__reply, signal = 'REPLY_SOCKET', sender = 'masterMainThread')
-        dispatcher.connect(self.listSlaves, signal = 'LIST_SLAVES', sender = 'masterMainThread')
-        dispatcher.connect(self.listTasks, signal = 'LIST_TASKS', sender = 'masterMainThread')
+        dispatcher.connect(self.newSubordinate, signal = 'NEW_SLAVE', sender = 'mainMainThread')
+        dispatcher.connect(self.delSubordinate, signal = 'DEL_SLAVE', sender = 'mainMainThread')
+        dispatcher.connect(self.newDownload, signal = 'NEW_DOWNLOAD', sender = 'mainMainThread')
+        dispatcher.connect(self.__reply, signal = 'REPLY_SOCKET', sender = 'mainMainThread')
+        dispatcher.connect(self.listSubordinates, signal = 'LIST_SLAVES', sender = 'mainMainThread')
+        dispatcher.connect(self.listTasks, signal = 'LIST_TASKS', sender = 'mainMainThread')
         self.__thread = MainThread()
         self.__thread.start()
         
@@ -47,28 +47,28 @@ class Dwgetd(object):
         while sent < len(self.replyMsg):
             sent += reply_sock.send(self.replyMsg[sent:])
             
-    def newSlave(self, ip, signal, sender):
+    def newSubordinate(self, ip, signal, sender):
         
-        if not self.__driver.addSlave(ip):
-            self.replyMsg = 'Slave: %s added' % (ip)
+        if not self.__driver.addSubordinate(ip):
+            self.replyMsg = 'Subordinate: %s added' % (ip)
         else:
-            self.replyMsg = 'Slave: %s already exists' % (ip)
-            dispatcher.send('ERROR', 'dwgetd', 'Slave: %s already exists' % (ip))
+            self.replyMsg = 'Subordinate: %s already exists' % (ip)
+            dispatcher.send('ERROR', 'dwgetd', 'Subordinate: %s already exists' % (ip))
         
         
-    def delSlave(self, ip, signal, sender):
+    def delSubordinate(self, ip, signal, sender):
         
-        if not self.__driver.removeSlave(ip):
-            self.replyMsg = 'Slave %s deleted form slave list' % (ip)
+        if not self.__driver.removeSubordinate(ip):
+            self.replyMsg = 'Subordinate %s deleted form subordinate list' % (ip)
         else:
-            self.replyMsg = 'No such slave: %s' % (ip)
-            dispatcher.send('ERROR', 'dwgetd', 'Can\'t delete: there is no slave with ip: %s' % (ip))
+            self.replyMsg = 'No such subordinate: %s' % (ip)
+            dispatcher.send('ERROR', 'dwgetd', 'Can\'t delete: there is no subordinate with ip: %s' % (ip))
     
-    def listSlaves(self, dummyArg):
+    def listSubordinates(self, dummyArg):
         
         self.replyMsg = ''
-        for slave in self.__driver.listSlaves():
-            self.replyMsg += (slave.ip + ' & ')
+        for subordinate in self.__driver.listSubordinates():
+            self.replyMsg += (subordinate.ip + ' & ')
  
             
     def listTasks(self, dummyArg):
@@ -102,12 +102,12 @@ class Dwgetd(object):
         try:
             newTask = self.__newTask(url)
             self.taskQueue.append(newTask)
-            #self.slaveList[0].start((-1,0), url, self.taskList[0].file);
+            #self.subordinateList[0].start((-1,0), url, self.taskList[0].file);
             #time.sleep(5)
-            #self.slaveList[0].updateReport();
+            #self.subordinateList[0].updateReport();
             #time.sleep(10)
-            #self.slaveList[0].updateReport();
-            #self.slaveList[0].requestBinData();
+            #self.subordinateList[0].updateReport();
+            #self.subordinateList[0].requestBinData();
 
         except:
             print sys.exc_info()

@@ -28,8 +28,8 @@ class BadConnect(Exception):
 class Task(object):
     '''
     Class representing a file to be downloaded. 
-    It stores a list of slaves that are assigned to the task. 
-    Every slave is only responsible for a part of a file specified in a task. 
+    It stores a list of subordinates that are assigned to the task. 
+    Every subordinate is only responsible for a part of a file specified in a task. 
     A part can also be a whole file if a server hosting the file does not support resuming.  
     The class contains information such as: 
         * url of the file to be downloaded 
@@ -45,14 +45,14 @@ class Task(object):
     supportsResume = True 
     fileFragments = [] 
     status = -1 
-    slaveDrv = None
+    subordinateDrv = None
 
-    def __init__(self, url, slaveDrv):
+    def __init__(self, url, subordinateDrv):
         '''
         Constructor
         '''
         self.url = url 
-        self.slaveDrv = slaveDrv
+        self.subordinateDrv = subordinateDrv
         self.status = TASK_NEW 
         self.fileFragments = []
         self.supportsResume=True
@@ -233,4 +233,4 @@ class mergingThread(Thread):
             frag.close() 
         completeFile.close()
         print "MERGING DONE"
-        self.task.slaveDrv.taskCompleted(self.task)       
+        self.task.subordinateDrv.taskCompleted(self.task)       

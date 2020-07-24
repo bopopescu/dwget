@@ -11,10 +11,10 @@ from xml.etree.ElementTree import *
 
 import sys
 
-class slaveManager():
+class subordinateManager():
     """
-    Class responsible for all kind of communication with a slave. It handles the queue
-    which stores all of the requests send to a slave. It also stores handle to the file
+    Class responsible for all kind of communication with a subordinate. It handles the queue
+    which stores all of the requests send to a subordinate. It also stores handle to the file
     with the file fragment downloaded.
     """
     __taskQueue=deque()
@@ -36,7 +36,7 @@ class slaveManager():
         If the request cannot be completed - raises exception. 
         """ 
         toAllocate -= self.__allocatedBytes       # How much more space do we need?
-        dispatcher.send('DEBUG', 'slaveManager.__tempFile', 'Allocating %d bytes more.' % (toAllocate)) 
+        dispatcher.send('DEBUG', 'subordinateManager.__tempFile', 'Allocating %d bytes more.' % (toAllocate)) 
         fill = ''
         for i in xrange(65536):                 # Prepare the fill (64 kB.
             fill = fill + 'x' 
@@ -53,13 +53,13 @@ class slaveManager():
         """
         Implements the changeState signal handler.
         """ 
-        dispatcher.send('DEBUG', 'slaveManager.subscriber', 'Changed state to %d.' %(arg[0])) 
+        dispatcher.send('DEBUG', 'subordinateManager.subscriber', 'Changed state to %d.' %(arg[0])) 
         self.state = arg[0]
     def __requestReceived(self, arg, signal, sender): 
         """
         Implements the requestReceived signal handler.
         """ 
-        dispatcher.send('DEBUG', 'slaveManager.subscriber', 'Received new request %d.' %(arg[0])) 
+        dispatcher.send('DEBUG', 'subordinateManager.subscriber', 'Received new request %d.' %(arg[0])) 
         self.__taskQueue.append([arg, False]) # arg -> task, false -> not being done now.
         self.__doTask()
         
@@ -68,11 +68,11 @@ class slaveManager():
             return
         
         if not self.__taskQueue[0][1]:    # Is task in front of the queue not being done yet?
-            dispatcher.send('DEBUG', 'slaveManager.taskQueue', 'Dealing with new request.') 
+            dispatcher.send('DEBUG', 'subordinateManager.taskQueue', 'Dealing with new request.') 
             self.__taskQueue[0][1] = True # If so, set it as being done.
             
             if self.__taskQueue[0][0][0] == NEW_URI:  # 'Start new download' task.
-                dispatcher.send('DEBUG', 'slaveManager.taskQueue', 'NEW_URI request.') 
+                dispatcher.send('DEBUG', 'subordinateManager.taskQueue', 'NEW_URI request.') 
                 (url, begin, length) = self.__taskQueue[0][0][1:] 
                 # cancel current DL
                 if self.dlThread is not None:
@@ -88,7 +88,7 @@ class slaveManager():
                     except:
                         print sys.exc_info()
                         dispatcher.send('STATE_CHANGE', self, (FAILED, ALLOCATION_FAILED))
-                        dispatcher.send('ERROR', 'slaveManager.__tempFile', 'Failed during allocation...')
+                        dispatcher.send('ERROR', 'subordinateManager.__tempFile', 'Failed during allocation...')
                         self.__taskQueue.popleft()
                         self.__doTask()
                         return # @TODO: Actually this breaks the flow.
@@ -97,13 +97,13 @@ class slaveManager():
                 self.dlThread.start()
 
             elif self.__taskQueue[0][0][0] == KILL:
-                dispatcher.send('DEBUG', 'slaveManager.taskQueue', 'DIE request.') 
+                dispatcher.send('DEBUG', 'subordinateManager.taskQueue', 'DIE request.') 
                 self.die()
             elif self.__taskQueue[0][0][0] == ABORT:
-                dispatcher.send('DEBUG', 'slaveManager.taskQueue', 'Request to abort transfer.')
+                dispatcher.send('DEBUG', 'subordinateManager.taskQueue', 'Request to abort transfer.')
                 self.dlThread.cancel() 
             else:
-                dispatcher.send('ERROR', 'slaveManager.taskQueue', 'Unimplemented request.') 
+                dispatcher.send('ERROR', 'subordinateManager.taskQueue', 'Unimplemented request.') 
                 
             # remove finished task
             self.__taskQueue.popleft()
@@ -124,7 +124,7 @@ class slaveManager():
         return None
     
     def die(self):
-        dispatcher.send('DEBUG', 'slaveManager', 'Received a request to DIE, doing just so.')
+        dispatcher.send('DEBUG', 'subordinateManager', 'Received a request to DIE, doing just so.')
         if self.dlThread is not None:
             self.dlThread.cancel()
             self.dlThread.join()             # wait until cancelled properly

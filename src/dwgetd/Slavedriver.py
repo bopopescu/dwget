@@ -5,7 +5,7 @@ Created on May 28, 2009
 '''
 # coding=utf8
 from common.consts import *
-from dwgetd.Slave import *
+from dwgetd.Subordinate import *
 from pydispatch import dispatcher
 from math import floor
 import thread
@@ -13,15 +13,15 @@ import thread
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import *
 
-class Slavedriver():
+class Subordinatedriver():
     '''
-    Class which task is managing all of the slaves that are assigned to the master.
-    It handles the global slave list and it adds new slaves, removes slaves,
-    controls the slaves that has been disconnected or have been timeouted.
-    It checks whether the slaves are still connected. It counts the slave downloading
+    Class which task is managing all of the subordinates that are assigned to the main.
+    It handles the global subordinate list and it adds new subordinates, removes subordinates,
+    controls the subordinates that has been disconnected or have been timeouted.
+    It checks whether the subordinates are still connected. It counts the subordinate downloading
     rates.
     '''
-    __slaveList = []
+    __subordinateList = []
     __taskList = []
     __lock = None
 
@@ -36,58 +36,58 @@ class Slavedriver():
         self.__lock=thread.allocate_lock()
         dispatcher.connect(self.parseRequest, signal = 'TASK_REQUEST', sender = dispatcher.Any)
         dispatcher.connect(self.fragmentCompleted, signal = 'TASK_COMPLETE', sender = dispatcher.Any)
-        dispatcher.connect(self.removeDeadSlave, signal='SLAVE_DEAD', sender = dispatcher.Any)
+        dispatcher.connect(self.removeDeadSubordinate, signal='SLAVE_DEAD', sender = dispatcher.Any)
         #dispatcher.connect(self.removeDuplicates, signal='DONE_CHUNK', sender = dispatcher.Any)
 
-    def removeDeadSlave(self, arg, signal, sender):
-        self.removeSlave(arg.ip)
+    def removeDeadSubordinate(self, arg, signal, sender):
+        self.removeSubordinate(arg.ip)
         self.doVoodoo() 
         
     def removeDuplicates(self, arg, ip):
-        for slave in self.__slaveList:
-            if slave.fileFragment == arg:
-                if slave.isActive and slave.ip != ip:
-                    print "FOUND DUPLICATED CHUNK TO ABORT ", slave.ip , slave.isActive
+        for subordinate in self.__subordinateList:
+            if subordinate.fileFragment == arg:
+                if subordinate.isActive and subordinate.ip != ip:
+                    print "FOUND DUPLICATED CHUNK TO ABORT ", subordinate.ip , subordinate.isActive
                     print arg.offset
-                    print slave.fileFragment.offset
-                    slave.abort()
+                    print subordinate.fileFragment.offset
+                    subordinate.abort()
                     self.doVoodoo()
         
-    def addSlave(self, ip):
+    def addSubordinate(self, ip):
         # @TODO should doVoodoo.
-        findList = [slave for slave in self.__slaveList if slave.ip == ip]
+        findList = [subordinate for subordinate in self.__subordinateList if subordinate.ip == ip]
         if not len(findList):
-            self.__slaveList.append(Slave(ip, self))
+            self.__subordinateList.append(Subordinate(ip, self))
             self.doVoodoo()
             return 0
         else:
-            dispatcher.send('ERROR', 'dwgetd', 'Slave: %s already exists' % (ip))
+            dispatcher.send('ERROR', 'dwgetd', 'Subordinate: %s already exists' % (ip))
             return -1
             
-    def removeSlave(self, ip):
-        toDelList = [slave for slave in self.__slaveList if slave.ip == ip]
-        for slave in self.__slaveList: 
-            print slave.ip
+    def removeSubordinate(self, ip):
+        toDelList = [subordinate for subordinate in self.__subordinateList if subordinate.ip == ip]
+        for subordinate in self.__subordinateList: 
+            print subordinate.ip
         if len(toDelList):
-            # @TODO: dispatch slaves task to other slaves.
+            # @TODO: dispatch subordinates task to other subordinates.
             print "!!!!!!!!!!!!!!!!!!!!!!!"
             print "!!!!!!!!!!!!!!!!!!!!!!!"
             print toDelList[0].ip 
             print ip 
             print "!!!!!!!!!!!!!!!!!!!!!!!"
             print "!!!!!!!!!!!!!!!!!!!!!!!"
-            print toDelList[0] in self.__slaveList 
-            self.__slaveList.remove(toDelList[0])
+            print toDelList[0] in self.__subordinateList 
+            self.__subordinateList.remove(toDelList[0])
             print "Po usunieciu: "
-            for slave in self.__slaveList: 
-                print slave.ip 
+            for subordinate in self.__subordinateList: 
+                print subordinate.ip 
             return 0
         else:
-            dispatcher.send('ERROR', 'dwgetd', 'Can\'t delete: there is no slave with ip: %s' % (ip))
+            dispatcher.send('ERROR', 'dwgetd', 'Can\'t delete: there is no subordinate with ip: %s' % (ip))
             return -1
 
-    def listSlaves(self):
-        return self.__slaveList
+    def listSubordinates(self):
+        return self.__subordinateList
 
     def listTasks(self):
         return self.__taskList
@@ -96,31 +96,31 @@ class Slavedriver():
         if arg == NEW_TASK:
             self.newTask(sender)
         else:
-            dispatcher.send('ERROR', 'slavedriver', 'Unknown request.')
+            dispatcher.send('ERROR', 'subordinatedriver', 'Unknown request.')
 
     def rateSpeed(self): 
-        #print "Oceny dla slave'ow:" 
-        for i in self.__slaveList: 
+        #print "Oceny dla subordinate'ow:" 
+        for i in self.__subordinateList: 
             #print "average speed: &f" %i.avgSpeed 
-            slavesCnt = 0 
+            subordinatesCnt = 0 
             avgSpeed = 0 
             #i.rating = 0.0 
-            for j in self.__slaveList: 
+            for j in self.__subordinateList: 
                 if i.url == j.url: 
                     #i.rating += j.avgSpeed 
-                    slavesCnt += 1 
+                    subordinatesCnt += 1 
                     avgSpeed += j.avgSpeed
-            if slavesCnt > 0 and avgSpeed > 0: 
-                i.rating = i.avgSpeed / (avgSpeed / slavesCnt) 
+            if subordinatesCnt > 0 and avgSpeed > 0: 
+                i.rating = i.avgSpeed / (avgSpeed / subordinatesCnt) 
             else:
                 i.rating = 1.
             #print i.url + " %f" %i.rating 
-        #print "Koniec ocen dla slave'ow..." 
+        #print "Koniec ocen dla subordinate'ow..." 
 
     def newTask(self, task):
         # @TODO: remove duplicates
         # @TODO: start task
-        dispatcher.send('DEBUG', 'slavedriver', 'New task started.')
+        dispatcher.send('DEBUG', 'subordinatedriver', 'New task started.')
         self.__taskList.append(task)
         self.doVoodoo()
 
@@ -147,22 +147,22 @@ class Slavedriver():
             for chunk in task.fileFragments:
                 if chunk.done != 0: continue # don't waste time on not-being-downloaded chunks 
                 ip = chunk.ip
-                if len([slave for slave in self.__slaveList if slave.ip == ip]) == 0 : # using dead slave
+                if len([subordinate for subordinate in self.__subordinateList if subordinate.ip == ip]) == 0 : # using dead subordinate
                     print task.url, chunk.ip, chunk.offset, "FAILED"
                     chunk.setRetry()
             
-        for slave in self.__slaveList:
-            if not slave.isActive and not slave.isDead:
+        for subordinate in self.__subordinateList:
+            if not subordinate.isActive and not subordinate.isDead:
                 for task in self.__taskList:
                     if task.status > 1:             # Don't waste time thinking about a completed task.
                         continue
-                    if task.fileFragments:          # Any to be retried after slave failure?
+                    if task.fileFragments:          # Any to be retried after subordinate failure?
                         for chunk in task.fileFragments:
                             if chunk.isToBeDownloaded():    # == FF_ERROR || FF_NEW
-                                print task.url, slave.ip, chunk.offset, " IS BEING DOWNLOADED"
-                                slave.setFileFragment(chunk)
-                                slave.start((chunk.length+1, chunk.offset-1), task.url, task.file)
-                                chunk.ip = slave.ip
+                                print task.url, subordinate.ip, chunk.offset, " IS BEING DOWNLOADED"
+                                subordinate.setFileFragment(chunk)
+                                subordinate.start((chunk.length+1, chunk.offset-1), task.url, task.file)
+                                chunk.ip = subordinate.ip
                                 
                                 # @TODO: self.doVoodoo() if it starts locking.
                                 self.releaseLock()
@@ -177,14 +177,14 @@ class Slavedriver():
                     if (offset+1) < task.size:                              # If last chunk happens to be outside the file.
                         print task.url, task.supportsResume
                         if task.supportsResume:
-                            chunk = task.addFileFragment(offset+1, min(max(int(floor(slave.rating*basePartSize)), minPartSize), task.size-offset-1), slave.ip)
-                            print task.url, slave.ip, chunk.offset,  chunk.length, " IS BEING DOWNLOADED"
-                            slave.setFileFragment(chunk)
-                            slave.start((chunk.length+1, chunk.offset-1), task.url, task.file)
+                            chunk = task.addFileFragment(offset+1, min(max(int(floor(subordinate.rating*basePartSize)), minPartSize), task.size-offset-1), subordinate.ip)
+                            print task.url, subordinate.ip, chunk.offset,  chunk.length, " IS BEING DOWNLOADED"
+                            subordinate.setFileFragment(chunk)
+                            subordinate.start((chunk.length+1, chunk.offset-1), task.url, task.file)
                         else:
-                            slave.setFileFragment(task.addFileFragment(0, task.size, slave.ip))
-                            slave.start((task.size, 0), task.url, task.file)
-                            print task.url, slave.ip, chunk.offset, " IS BEING DOWNLOADED"
+                            subordinate.setFileFragment(task.addFileFragment(0, task.size, subordinate.ip))
+                            subordinate.start((task.size, 0), task.url, task.file)
+                            print task.url, subordinate.ip, chunk.offset, " IS BEING DOWNLOADED"
                             
                         self.releaseLock()
                         self.doVoodoo()
@@ -204,19 +204,19 @@ class Slavedriver():
                             task.mergeFile()
                             continue
                         #sys.exit(0)
-               # slave.start(())
+               # subordinate.start(())
                
                # If we're here, we don't have anything to do. Can't let that happen, can we...
                # 
                
-#                ratingToBeat = slave.rating
+#                ratingToBeat = subordinate.rating
 #                worstTask = None
 #                worstChunk = None
 #                worstRank = 0               
 #                for task in self.__taskList:
 #                    if task.status > 1:             # Don't waste time thinking about a completed task.
 #                        continue
-#                    if task.fileFragments:          # Any to be retried after slave failure?
+#                    if task.fileFragments:          # Any to be retried after subordinate failure?
 #                        for chunk in task.fileFragments:
 #                            if chunk.done != 0:
 #                                continue
@@ -225,11 +225,11 @@ class Slavedriver():
 #                            avgSpeed = 0
 #                            rating = 0
 #                            
-#                            for slave in self.__slaveList:
-#                                if chunk.ip == slave.ip:
-#                                    remaining = chunk.length - slave.received  
-#                                    avgSpeed = slave.avgSpeed
-#                                    rating = slave.rating
+#                            for subordinate in self.__subordinateList:
+#                                if chunk.ip == subordinate.ip:
+#                                    remaining = chunk.length - subordinate.received  
+#                                    avgSpeed = subordinate.avgSpeed
+#                                    rating = subordinate.rating
 #                                    
 #                            rank = remaining*avgSpeed*rating
 #                            
@@ -238,9 +238,9 @@ class Slavedriver():
 #                                worstTask = task
 #                                worstChunk = chunk
 #                    
-#                    print task.url, slave.ip, chunk.offset,  chunk.length, "IS BEING DUPLICATED (TAKEN OVER FROM", chunk.ip, ")."
-#                    slave.setFileFragment(chunk)
-#                    slave.start((chunk.length+1, chunk.offset-1), task.url, task.file)
+#                    print task.url, subordinate.ip, chunk.offset,  chunk.length, "IS BEING DUPLICATED (TAKEN OVER FROM", chunk.ip, ")."
+#                    subordinate.setFileFragment(chunk)
+#                    subordinate.start((chunk.length+1, chunk.offset-1), task.url, task.file)
 #               
         self.releaseLock()
         

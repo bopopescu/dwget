@@ -15,7 +15,7 @@ class fileFragment():
         * length of the fragment 
         * position of the fragment in the original file 
         * file handle in local filesystem 
-        * ip of the slave which is downloading the fragment 
+        * ip of the subordinate which is downloading the fragment 
         * information whether all data in the fragment has been downloaded 
     '''
     offset = -1 

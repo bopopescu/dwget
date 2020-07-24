@@ -1,6 +1,6 @@
 basePartSize = 512*1024
 
-# NEW_STATE (dlThread <--> slaveMgr)
+# NEW_STATE (dlThread <--> subordinateMgr)
 JUST_STARTED        = 0
 ALLOCATING          = 1
 CONNECTING          = 2
@@ -28,7 +28,7 @@ WRITE_TO_TMP_FILE_FAILED     = 6
 
 string_failed_reasons        = ['Unknown protocol', 'Bad port number', 
                                 'Weird response code received', 'Wrong response code received', 
-                                'Remote host does not provide resume support, though master said it should']
+                                'Remote host does not provide resume support, though main said it should']
 
 # MASTER_REQUEST
 NEW_URI         = 0

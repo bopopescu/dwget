@@ -23,7 +23,7 @@ class MainThread(Thread):
         self.__server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) # tutaj bedziemy sluchac na polecenia od konsoli
         
         if not self.__server:
-            dispatcher.send('ERROR', 'masterMainThread', 'Can\'t open UNIX socket in /tmp')
+            dispatcher.send('ERROR', 'mainMainThread', 'Can\'t open UNIX socket in /tmp')
 
         self.__server.bind("/tmp/"+self.__socketFileName)
                 
@@ -31,7 +31,7 @@ class MainThread(Thread):
                     
     def __init__ (self):
         Thread.__init__(self)
-        dispatcher.send('DEBUG', 'masterMainThread', '__init__')
+        dispatcher.send('DEBUG', 'mainMainThread', '__init__')
         self.setupSocket()
         self.daemon = True
         
@@ -52,17 +52,17 @@ class MainThread(Thread):
 
             [command, arg] = self.__msg.split(' ')
  
-            dispatcher.send(command, 'masterMainThread', arg)
-            dispatcher.send('REPLY_SOCKET', 'masterMainThread', connection)
+            dispatcher.send(command, 'mainMainThread', arg)
+            dispatcher.send('REPLY_SOCKET', 'mainMainThread', connection)
             self.__msg = ''
 
     def __del__(self):
         self.__server.close()
         
-class SlaveThread(Thread):
+class SubordinateThread(Thread):
     '''
     Class representing a thread fired when there is a need to communicate with 
-    specified slave. An instance of this class is created when there is need to send
+    specified subordinate. An instance of this class is created when there is need to send
     information. After reciveing confirmation or error message the instance of class
     is removed.
     '''
@@ -81,7 +81,7 @@ class SlaveThread(Thread):
         self.downloaded = False
         
         Thread.__init__(self)
-        dispatcher.send('DEBUG', 'SlaveThread', '__init__')
+        dispatcher.send('DEBUG', 'SubordinateThread', '__init__')
         self.daemon = True
         self.isAlive = True
     
@@ -90,10 +90,10 @@ class SlaveThread(Thread):
         self.__sock.settimeout(10)
         
         if not self.__sock:
-            dispatcher.send('ERROR', 'SlaveThread', 'Can\'t open __socket in slaveThread')
+            dispatcher.send('ERROR', 'SubordinateThread', 'Can\'t open __socket in subordinateThread')
     
     def run(self):
-        dispatcher.send('DEBUG', 'SlaveThread', 'Sending data...')
+        dispatcher.send('DEBUG', 'SubordinateThread', 'Sending data...')
         
         triedCounter = 0
         
@@ -105,14 +105,14 @@ class SlaveThread(Thread):
                 sent = 0
                 while sent < len(self.data):
                     sent += self.__sock.send(self.data[sent:])
-                dispatcher.send('DEBUG', 'SlaveThread', 'Data sent...')        
+                dispatcher.send('DEBUG', 'SubordinateThread', 'Data sent...')        
                 
                 
                 #print '!!!!!!!!!!!!!!!!!'
                 #print self.__binFilename
                 
                 if not self.__binFilename:
-                    dispatcher.send('DEBUG', 'SlaveThread', 'XML mode')        
+                    dispatcher.send('DEBUG', 'SubordinateThread', 'XML mode')        
                 
                     self.receivedData = ''
                     while 1:
@@ -120,7 +120,7 @@ class SlaveThread(Thread):
                         if not data: break
                         self.receivedData = self.receivedData + data
                 else:
-                     dispatcher.send('DEBUG', 'SlaveThread', 'Binary mode')
+                     dispatcher.send('DEBUG', 'SubordinateThread', 'Binary mode')
                      # TODO Co uzywa dispatcher.self.receivedData
                      self.receivedData = 'binary data: ..010010001110010...'        
 
@@ -141,8 +141,8 @@ class SlaveThread(Thread):
                 break
             except:
                   print sys.exc_info()
-                  dispatcher.send('ERROR', 'SlaveThread', 'Connection to slave %s timed out' % (self.__ip))
-                  dispatcher.send('CONN_TIMEOUT', 'SlaveThread', self)
+                  dispatcher.send('ERROR', 'SubordinateThread', 'Connection to subordinate %s timed out' % (self.__ip))
+                  dispatcher.send('CONN_TIMEOUT', 'SubordinateThread', self)
                   print "TAJMAUT"
                   self.__sock.close()
                   #time.sleep(1)
@@ -157,7 +157,7 @@ class SlaveThread(Thread):
                   
                   continue            
           
-        #dispatcher.send('CHAT_FINISHED', 'SlaveThread', self.receivedData)
+        #dispatcher.send('CHAT_FINISHED', 'SubordinateThread', self.receivedData)
         if self.receivedData:
             self.parent.chatFinished(self.receivedData)
         self.isAlive = False
@@ -170,22 +170,22 @@ class SlaveThread(Thread):
         
 class ReportingThread(Thread):
     '''
-    Class representing a thread which purpose is to ask for a report from the slave
+    Class representing a thread which purpose is to ask for a report from the subordinate
     once in every 2 seconds.
-    Every instance of slave class handles its own reporting thread which is asking
+    Every instance of subordinate class handles its own reporting thread which is asking
     for a report.
     '''
         
-    def __init__(self, slave):
+    def __init__(self, subordinate):
         Thread.__init__(self)
         self.setDaemon(True)
         self.alive = True
-        self.slave = slave
+        self.subordinate = subordinate
         
     def run(self):
         while 1:
             if self.alive:
-                self.slave.updateReport()
+                self.subordinate.updateReport()
             time.sleep(2)
             
         

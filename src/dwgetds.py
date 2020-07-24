@@ -4,7 +4,7 @@ from pydispatch import dispatcher
 from common.consts import *
 from dwgetds.threads import * 
 from dwgetds.talkerThread import *   
-from dwgetds.slaveMgr import *
+from dwgetds.subordinateMgr import *
 
 import sys
 import time
@@ -13,11 +13,11 @@ import socket
 
 def main():
     logger = Logger('dwgetds', 2000, '', True)
-    slaveMgr = slaveManager()
-    logger.addStuff(slaveMgr)
-    tThread = talkerThread(slaveMgr, '') 
+    subordinateMgr = subordinateManager()
+    logger.addStuff(subordinateMgr)
+    tThread = talkerThread(subordinateMgr, '') 
     tThread.start() 
-    dispatcher.send('DEBUG', 'dwgetds', 'Started dwget slave daemon.')
+    dispatcher.send('DEBUG', 'dwgetds', 'Started dwget subordinate daemon.')
 #    dispatcher.send('MASTER_REQUEST', 'test', (NEW_URI, 'http://dfn.dl.sourceforge.net/sourceforge/sevenzip/7z465.exe', 0, 128000))
 #    time.sleep(10) For profiling
     
@@ -55,9 +55,9 @@ if __name__ == '__main__':
 #    dispatcher.send('MASTER_REQUEST', 'test', (NEW_URI, 'http://dfn.dl.sourceforge.net/sourceforge/sevenzip/7z465.exe', 0, 939956))
 #    time.sleep(8)
 #    dispatcher.send('MASTER_REQUEST', 'test', (NEW_URI, 'http://download.living-e.com/MAMP/releases/1.7.2/MAMP_1.7.2.dmg', 0, 1024))
-#    print slaveMgr.getReport()
+#    print subordinateMgr.getReport()
 #    dispatcher.send('MASTER_REQUEST', 'test', (NEW_URI, 'http://dfn.dl.sourceforge.net/sourceforge/sevenzip/7z465.exe', 0, 939956))
 #    time.sleep(8)
-#    print slaveMgr.getReport()
-#    slaveMgr.die()
+#    print subordinateMgr.getReport()
+#    subordinateMgr.die()
     

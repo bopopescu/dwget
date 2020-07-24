@@ -21,17 +21,17 @@ def sendAndConfirm (options):
 
     if options.ipAdd != None :
         s.send('NEW_SLAVE '+options.ipAdd+'\n')
-        print 'trying to add slave with ip: ', options.ipAdd
+        print 'trying to add subordinate with ip: ', options.ipAdd
     elif options.ipDel != None :
         s.send('DEL_SLAVE '+options.ipDel+'\n')
-        print 'trying to delete slave with ip: ', options.ipDel
+        print 'trying to delete subordinate with ip: ', options.ipDel
     elif options.address != None :
         s.send('NEW_DOWNLOAD '+opt.address+'\n')
         print 'trying to start the download of: "'+options.address+'"'
-    elif options.slaveList == True :
+    elif options.subordinateList == True :
         s.send('LIST_SLAVES dummy_arg'+'\n')
-        print 'listing slaves..'
-        options.slaveList = False
+        print 'listing subordinates..'
+        options.subordinateList = False
     elif options.taskList == True :
         s.send('LIST_TASKS dummy_arg'+'\n')
         print 'listing current tasks..'
@@ -54,10 +54,10 @@ def sendAndConfirm (options):
 if __name__ == '__main__':
     # obsluga wejscia z konsoli
     parser = OptionParser()
-    parser.add_option("-a", dest="ipAdd", help="add IP of a new slave")
-    parser.add_option("-d", dest="ipDel", help="delete slave with given IP")
+    parser.add_option("-a", dest="ipAdd", help="add IP of a new subordinate")
+    parser.add_option("-d", dest="ipDel", help="delete subordinate with given IP")
     parser.add_option("-n", dest="address", help="new file to download")
-    parser.add_option("-s", dest="slaveList", action="store_true", default=False, help="view the list of slaves")
+    parser.add_option("-s", dest="subordinateList", action="store_true", default=False, help="view the list of subordinates")
     parser.add_option("-l", dest="taskList", action="store_true", default=False, help="view the list of current tasks")
     (opt, args) = parser.parse_args()
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
                 print 'http address: "'+opt.address+'" is incorrect!'
                 opt.address = None      
     else :
-        if (opt.slaveList == True) or (opt.taskList == True) :
+        if (opt.subordinateList == True) or (opt.taskList == True) :
             sendAndConfirm (opt) # nie było -a -d -n ale moglo byc -s -l 
         
         sys.exit()

@@ -4,18 +4,18 @@ from dwgetd.threads import *
 from xml.etree import ElementTree as ET
 import thread
 
-class Slave():
+class Subordinate():
     '''
-    Class representing a single slave used to download a specified file fragment. 
-    It stores deataled key information about every slave, such as: 
-        * ip address of a slave 
-        * state of a slave 
+    Class representing a single subordinate used to download a specified file fragment. 
+    It stores deataled key information about every subordinate, such as: 
+        * ip address of a subordinate 
+        * state of a subordinate 
         * url of a file 
         * object representing file fragment @see fileFragment.py 
-        * status of a slave 
+        * status of a subordinate 
         * average downloading speed of a file fragment  
         * current downloading speed of a file fragment  
-        * rating of a slave 
+        * rating of a subordinate 
     '''
     ip = ''
     isActive = False
@@ -32,8 +32,8 @@ class Slave():
     lock = None
     
     
-    slaveTalk = None
-    __receivedData = '' # data received in slave Talk
+    subordinateTalk = None
+    __receivedData = '' # data received in subordinate Talk
     __orderQueue = deque()
     parseFunc = None # function handle to parse incoming data
     binFilename = None
@@ -56,9 +56,9 @@ class Slave():
         self.lock=thread.allocate_lock()
         self.aborting = False
         print self.lock
-        dispatcher.send('DEBUG', 'slaveObject', '__init__')
+        dispatcher.send('DEBUG', 'subordinateObject', '__init__')
         dispatcher.connect(self.doOrder, signal = 'SLAVE_PARSE_QUEUE', sender = self)
-        dispatcher.connect(self.parseSlaveReport, signal = 'PARSE_REPORT', sender = self)
+        dispatcher.connect(self.parseSubordinateReport, signal = 'PARSE_REPORT', sender = self)
         dispatcher.connect(self.binData, signal = 'PARSE_BINDATA', sender = self)   
         dispatcher.connect(self.dummyF, signal = 'DUMMY_FUNC', sender = self)       
        
@@ -77,13 +77,13 @@ class Slave():
        
     def chatFinished(self, receivedData = 'dummyMsg'):
         """
-        receivedData is slaves response, not used here
+        receivedData is subordinates response, not used here
         """
         #self.receivedData = receivedData
         if receivedData[0] != '<' and self.parseFunc != 'PARSE_BINDATA':
             pass
         #print self, self.parseFunc, '\n', receivedData
-        if self.slaveTalk.file_fragment_done:
+        if self.subordinateTalk.file_fragment_done:
             print self.fileFragment.offset, " done."
             self.fileFragment.setDone()
         #print self
@@ -95,7 +95,7 @@ class Slave():
         if self.rThread:
             self.rThread.alive = False
         self.__orderQueue.clear()
-        dispatcher.send('SLAVE_DEAD', 'slaveObject', self)
+        dispatcher.send('SLAVE_DEAD', 'subordinateObject', self)
                 
     def doOrder(self, arg, signal, sender):
         """
@@ -114,26 +114,26 @@ class Slave():
         while not self.lock:
             pass
             
-        if len(self.__orderQueue) > 0 and self.slaveTalk == None:
+        if len(self.__orderQueue) > 0 and self.subordinateTalk == None:
             debugstr = self.__orderQueue[0][1]
-            if self.getLock(debugstr) and len(self.__orderQueue) > 0 and self.slaveTalk == None: 
+            if self.getLock(debugstr) and len(self.__orderQueue) > 0 and self.subordinateTalk == None: 
                 #self.__orderQueue[0][2] = True
                 #if (self.__orderQueue[0][2] != self):
                  #   print "That's not gone well... :("
                    # self.releaseLock()
                     #time.sleep(0.1)
                    # return
-                (slaveData, self.parseFunc, activity) = self.__orderQueue[0]  # tuple in queue, order and proper parse fucntion
+                (subordinateData, self.parseFunc, activity) = self.__orderQueue[0]  # tuple in queue, order and proper parse fucntion
                 
                 if self.parseFunc == 'PARSE_BINDATA':
                     binFilename = self.binFilename
                     
-                #print self, slaveData
+                #print self, subordinateData
                     
-                self.slaveTalk = SlaveThread(self, self.ip, binFilename)
-                self.slaveTalk.data = slaveData
-                self.slaveTalk.data += '\n'
-                self.slaveTalk.start()
+                self.subordinateTalk = SubordinateThread(self, self.ip, binFilename)
+                self.subordinateTalk.data = subordinateData
+                self.subordinateTalk.data += '\n'
+                self.subordinateTalk.start()
 
          
         return     
@@ -142,7 +142,7 @@ class Slave():
         orderElement = ET.Element("Order")
         orderElement.attrib["type"] = "report"
         xmlFile = ET.tostring(orderElement, 'utf-8')
-        dispatcher.send('DEBUG', 'slaveObject', xmlFile)
+        dispatcher.send('DEBUG', 'subordinateObject', xmlFile)
         
         for i in self.__orderQueue:
             if i[1] == 'PARSE_REPORT' and i[2] == self:
@@ -156,7 +156,7 @@ class Slave():
         orderElement = ET.Element("Order")
         orderElement.attrib["type"] = "abort"
         xmlFile = ET.tostring(orderElement, 'utf-8')
-        dispatcher.send('DEBUG', 'slaveObject', xmlFile)
+        dispatcher.send('DEBUG', 'subordinateObject', xmlFile)
         self.aborting = True
         print "ABORT requested",self
         self.__orderQueue.append([xmlFile, 'DUMMY_F', self])
@@ -164,11 +164,11 @@ class Slave():
 
 
 
-    def parseSlaveReport(self, arg, signal, sender):
+    def parseSubordinateReport(self, arg, signal, sender):
         '''
         Param: chunk[lenght, start], server w/o resume, set file length to -1 
         '''
-         # parse report sent by slave here into slave class variables
+         # parse report sent by subordinate here into subordinate class variables
        # print self, "parse report"
        
         if self.isDead == True:
@@ -183,7 +183,7 @@ class Slave():
         self.currentSpeed = float(report.find("currentSpeed").text)
 
         self.__orderQueue.popleft()
-        self.slaveTalk = None
+        self.subordinateTalk = None
 #        self.__orderQueue.popleft()    
         try:
             self.releaseLock()
@@ -192,7 +192,7 @@ class Slave():
             pass   
         dispatcher.send('SLAVE_PARSE_QUEUE', self, '')
         
-        # request binData if file completed on slave 
+        # request binData if file completed on subordinate 
         if self.status == 6 and self.isActive:
             self.rThread.alive = False
             #print "RTHREAD OFF", self
@@ -220,7 +220,7 @@ class Slave():
         urlElement.text = (self.url)
            
         xmlFile = ET.tostring(orderElement, 'utf-8')
-        dispatcher.send('DEBUG', 'slaveObject', xmlFile)
+        dispatcher.send('DEBUG', 'subordinateObject', xmlFile)
 
         self.__orderQueue.append([xmlFile, 'DUMMY_FUNC', self])
         self.isActive = True
@@ -249,8 +249,8 @@ class Slave():
             self.aborting = False
             self.isActive = False
         self.__orderQueue.popleft()
-        del self.slaveTalk
-        self.slaveTalk = None
+        del self.subordinateTalk
+        self.subordinateTalk = None
 #        self.__orderQueue.popleft()
         try:
             self.releaseLock()
@@ -263,7 +263,7 @@ class Slave():
 #        orderElement = ET.Element("Order")
 #        orderElement.attrib["type"] = "abort"
 #        xmlFile = ET.tostring(orderElement, 'utf-8')
-#        dispatcher.send('DEBUG', 'slaveObject', xmlFile)
+#        dispatcher.send('DEBUG', 'subordinateObject', xmlFile)
 #        
 #        self.__orderQueue.append([xmlFile, dummyF, False])
 #        self.doOrder()
@@ -276,7 +276,7 @@ class Slave():
         orderElement = ET.Element("Order")
         orderElement.attrib["type"] = "upload"
         xmlFile = ET.tostring(orderElement, 'utf-8')
-        dispatcher.send('DEBUG', 'slaveObject', xmlFile)
+        dispatcher.send('DEBUG', 'subordinateObject', xmlFile)
         
         self.__orderQueue.append((xmlFile, 'PARSE_BINDATA', self))
         dispatcher.send('SLAVE_PARSE_QUEUE', self, '')
@@ -287,16 +287,16 @@ class Slave():
             return
         
         self.isActive = False
-        if self.slaveTalk.downloaded == self.chunk[0]:
+        if self.subordinateTalk.downloaded == self.chunk[0]:
             self.__orderQueue.popleft()
-            dispatcher.send('TASK_COMPLETE', 'slaveObject', 'dummyMsg')
-            dispatcher.send('DONE_CHUNK', 'slaveObject', self.fileFragment)
+            dispatcher.send('TASK_COMPLETE', 'subordinateObject', 'dummyMsg')
+            dispatcher.send('DONE_CHUNK', 'subordinateObject', self.fileFragment)
             self.driver.removeDuplicates(self.fileFragment, self.ip)
             print self.ip, "UPLOAD COMPLETED"
         else:
             print self.ip, "RETRYING UPLOAD"
-        del self.slaveTalk
-        self.slaveTalk = None
+        del self.subordinateTalk
+        self.subordinateTalk = None
 #        self.__orderQueue.popleft()
         try:
             self.releaseLock()

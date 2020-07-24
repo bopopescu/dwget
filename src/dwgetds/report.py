@@ -3,9 +3,9 @@ from xml.etree.ElementTree import *
 
 class Report():
     '''
-    Class responsible for generating reports fur das Master Node.
-    The Master Node giveth and the Master Node taketh away, blessed 
-    be the name of the Master Node.
+    Class responsible for generating reports fur das Main Node.
+    The Main Node giveth and the Main Node taketh away, blessed 
+    be the name of the Main Node.
     '''
     
     # All the required elements.
@@ -16,8 +16,8 @@ class Report():
     receivedSoFar = 0
     
 
-    def __init__(self, slaveMgr, dlThread):
-        self.state = slaveMgr.state
+    def __init__(self, subordinateMgr, dlThread):
+        self.state = subordinateMgr.state
         if dlThread:
             self.location = dlThread.url
             self.currentSpeed = dlThread.speed

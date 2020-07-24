@@ -103,10 +103,10 @@ def index(request):
             for chunk in task[3]:
                 if chunk[3]:
                     dl += chunk[2]+1
-                for slave in s:
-                    if not chunk[3] and chunk[0] == slave[0] and task[0] == slave[1]:
-                        dl += slave[3]
-                        chunk.append(slave)
+                for subordinate in s:
+                    if not chunk[3] and chunk[0] == subordinate[0] and task[0] == subordinate[1]:
+                        dl += subordinate[3]
+                        chunk.append(subordinate)
         task.append(sizeof_fmt(dl))
         task.append(floor(100.*dl/task[1]))
         print ((task[0], dl), "%d"%floor(100.*dl/task[1]))
@@ -137,14 +137,14 @@ def index(request):
         task.append(2 * task[5]) # in task.6 progressBar
         
         
-        if type(slave[3]) == type(int()):
-            for slave in s:
-                slave[3] = sizeof_fmt(slave[3]) 
-                slave[4] = sizeof_fmt(slave[4])
-                slave[5] = sizeof_fmt(slave[5])
+        if type(subordinate[3]) == type(int()):
+            for subordinate in s:
+                subordinate[3] = sizeof_fmt(subordinate[3]) 
+                subordinate[4] = sizeof_fmt(subordinate[4])
+                subordinate[5] = sizeof_fmt(subordinate[5])
             
         
-    return render_to_response("index.html", {'logs': log, 'tasks': t, 'slaves': s})
+    return render_to_response("index.html", {'logs': log, 'tasks': t, 'subordinates': s})
 
 def listQueried(request):    
     cursor = connection.cursor()
